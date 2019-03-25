@@ -83,12 +83,14 @@ namespace UtilitySlots
 		}
 
 		internal static void Load() {
-			providers.Add(item => {
+			// default handler provider
+			AddProvider(item => {
 				itemIdHandlers.TryGetValue(item.type, out var h);
 				return h;
 			});
 
-			providers.Add(item => item.wingSlot > 0 ? new SingleTypeHandler(item.type) : null);
+			// wing provider
+			AddProvider(item => item.wingSlot > 0 ? new SingleTypeHandler(item.type) : null);
 
 			AddDefaultHandler(
 				CloudinaBottle, SandstorminaBottle, BlizzardinaBottle, FartinaJar, TsunamiInABottle,
