@@ -1,6 +1,7 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <Import Project="$(MSBuildExtensionsPath)$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <Import Project="..\..\references\tModLoader.targets" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -9,78 +10,35 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>UtilitySlots</RootNamespace>
     <AssemblyName>UtilitySlots</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' Or '$(Configuration)|$(Platform)' == 'ServerDebug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <PlatformTarget>x86</PlatformTarget>
-    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="log4net">
-      <HintPath>..\..\tModLoader\references\log4net.dll</HintPath>
-    </Reference>
-    <Reference Include="Mono.Cecil">
-      <HintPath>..\..\tModLoader\references\Mono.Cecil.dll</HintPath>
-    </Reference>
-    <Reference Include="MonoMod.RuntimeDetour">
-      <HintPath>..\..\tModLoader\references\MonoMod.RuntimeDetour.dll</HintPath>
-    </Reference>
-    <Reference Include="MonoMod.Utils">
-      <HintPath>..\..\tModLoader\references\MonoMod.Utils.dll</HintPath>
-    </Reference>
+    <Compile Include="**\*.cs" Exclude="obj\**\*.*" />
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="Microsoft.Xna.Framework" />
-    <Reference Include="Microsoft.Xna.Framework.Game" />
-    <Reference Include="Microsoft.Xna.Framework.Graphics" />
-    <Reference Include="TerrariaHooks.Windows">
-      <HintPath>..\..\tModLoader\references\TerrariaHooks.Windows.dll</HintPath>
-    </Reference>
-    <Reference Include="tModLoaderDebug">
-      <HintPath>..\..\..\..\Games\SteamLibrary\steamapps\common\Terraria\tModLoaderDebug.exe</HintPath>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="GlobalItemHook.cs" />
-    <Compile Include="InvUtils.cs" />
-    <Compile Include="NetHandler.cs" />
-    <Compile Include="UtilityAccessories.cs" />
-    <Compile Include="UtilityInventory.cs" />
-    <Compile Include="UtilitySlots.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Properties\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="build.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>"D:\Games\SteamLibrary\steamapps\common\Terraria\tModLoaderServerDebug.exe" -build "$(ProjectDir)\" -eac "$(TargetPath)"</PostBuildEvent>
+    <PostBuildEvent>"$(tMLServerPath)" -build "$(ProjectDir)\" -eac "$(TargetPath)"</PostBuildEvent>
   </PropertyGroup>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>
