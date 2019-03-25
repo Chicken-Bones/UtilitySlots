@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection.Emit;
-using CodeChickenLib.IL;
-using Harmony;
+using System.Reflection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Mono.Cecil.Cil;
+using MonoMod.RuntimeDetour.HookGen;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.GameContent.Achievements;
@@ -13,13 +14,14 @@ using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
 using Terraria.UI;
 using static UtilitySlots.UtilityAccessories;
+using static Mono.Cecil.Cil.OpCodes;
 
 namespace UtilitySlots
 {
 	public static class UtilityPlayer
 	{
-		public static UtilityInventory UtilityInv(this Player player) => 
-			player.GetModPlayer<UtilityInventory>(UtilitySlots.Instance);
+		public static UtilityInventory UtilityInv(this Player player) =>
+			player.GetModPlayer<UtilityInventory>();
 	}
 
 	public class UtilityInventory : ModPlayer
@@ -129,7 +131,7 @@ namespace UtilitySlots
 
 			return items.Any(i => Incompatible(i, item, slot >= 10));
 		}
-		
+
 		/// <summary>
 		/// Implements fast equip
 		/// </summary>
@@ -151,7 +153,7 @@ namespace UtilitySlots
 				if (Incompatible(item, player.armor[3 + i], false) ||
 					Incompatible(item, player.armor[13 + i], true))
 					return false;
-			
+
 			//free slot for a partial utility accessory in the main equipment slots
 			if (!handler.FullyFunctional && Enumerable.Range(3, SlotCount).Any(i => player.armor[i].type <= 0))
 				return false;
@@ -376,6 +378,8 @@ namespace UtilitySlots
 			Main.player[Main.myPlayer].UtilityInv().Draw(Main.spriteBatch, mH);
 		}
 
+		/// <summary>
+		/// </summary>
 		/// <param name="pos">Page icon drawing position</param>
 		/// <returns>true if the page icon is under the mouse</returns>
 		private static bool DrawPageIcons(Vector2 pos) {
@@ -385,10 +389,10 @@ namespace UtilitySlots
 
 			var tex = UtilitySlots.Instance.GetTexture("assets/btn_ua_"+(Main.EquipPage == EquipPage ? 1 : 0));
 			bool highlight = false;
-			if (Collision.CheckAABBvAABBCollision(pos, tex.Size(), new Vector2(Main.mouseX, Main.mouseY), Vector2.One) && 
+			if (Collision.CheckAABBvAABBCollision(pos, tex.Size(), new Vector2(Main.mouseX, Main.mouseY), Vector2.One) &&
 					(Main.mouseItem.stack < 1 || GetHandler(Main.mouseItem) != null || Main.mouseItem.dye > 0)) {
 				highlight = true;
-				Main.spriteBatch.Draw(UtilitySlots.Instance.GetTexture("assets/btn_ua_2"), 
+				Main.spriteBatch.Draw(UtilitySlots.Instance.GetTexture("assets/btn_ua_2"),
 					pos, null, Main.OurFavoriteColor, 0f, new Vector2(2f), scale, SpriteEffects.None, 0f);
 			}
 			Main.spriteBatch.Draw(tex, pos, null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
@@ -415,135 +419,78 @@ namespace UtilitySlots
 		}
 
 		internal static void Hook() {
-			HookDrawInventory();
-			HookDrawPageIcons();
-			HookArmorSwap();
+			IL.Terraria.Main.DrawInventory += HookDrawInventory;
+			IL.Terraria.Main.DrawPageIcons += HookDrawPageIcons;
+			IL.Terraria.UI.ItemSlot.SwapEquip_ItemArray_int_int += HookArmorSwap;
 		}
 
-		private static void HookDrawInventory() {
-			var m = new MethodNode(typeof (Main).MethodByName("DrawInventory")).ReadInsns();
-			//before if (Main.EquipPage == 1)
-			var pos = m.insns.Find(new InsnList(m)
-					.Add(OpCodes.Ldsfld, typeof(Main).GetField("EquipPage"))
-					.Add(OpCodes.Ldc_I4, 1))
-				.Single();
+		private static void HookDrawInventory(HookIL il) {
+			HookILCursor c = il.At(0);
 
-			var endIf = pos.First.PrevInsn.LabelOperand;
-			var cursor = new InsnCursor(m.insns).Before(pos);
+			//else if (Main.EquipPage == UtilityInventory.EquipPage) UtilityInventory.DrawInventory(Main.mH)
+			//before else if (Main.EquipPage == 1)
+			c.GotoNext(
+				i => i.MatchLdsfld<Main>(nameof(Main.EquipPage)),
+				i => i.MatchLdcI4(1));
 
-			//insert if (Main.EquipPage == UtilityInventory.EquipPage) UtilityInventory.DrawInventory(Main.mH) else
-			var nextElseIf = new LabelNode();
-			cursor.Add(OpCodes.Ldsfld, typeof(Main).GetField("EquipPage"));
-			cursor.Add(OpCodes.Ldc_I4, EquipPage);
-			cursor.Add(OpCodes.Bne_Un, nextElseIf);
-			cursor.Add(OpCodes.Ldsfld, typeof(Main).FieldByName("mH"));
-			cursor.Hook(typeof (UtilityInventory).MethodByName(nameof(DrawInventory)));
-			cursor.Add(OpCodes.Br, endIf);
-			cursor.Add(nextElseIf);
-
-			m.Inject();
-
-			InjectionHelper.Reset(typeof (Main).MethodByName("DrawInterface_27_Inventory"));
+			var endIfLabel = c.Prev.Operand; //br endIf
+			var elseIfLabel = il.DefineLabel();
+			c.MoveAfterLabel();
+			c.Emit(Ldsfld, typeof(Main).GetField(nameof(Main.EquipPage)));
+            c.Emit(Ldc_I4, EquipPage);
+            c.Emit(Bne_Un, elseIfLabel);
+            c.Emit(Ldsfld, typeof(Main).GetField("mH", BindingFlags.NonPublic | BindingFlags.Static));
+			c.EmitDelegate<Action<int>>(DrawInventory);
+            c.Emit(Br, endIfLabel);
+			c.MarkLabel(elseIfLabel);
 		}
 
+		private static void HookDrawPageIcons(HookIL il) {
+			HookILCursor c = il.At(0);
 
-
-		private static void HookDrawPageIcons() {
-			var m = new MethodNode(typeof (Main).MethodByName("DrawPageIcons")).ReadInsns();
-
+			//after Vector2 vector = new Vector2((float)(screenWidth - 162), (float)(142 + mH));
 			//if(UtilityInventory.DrawPageIcons(vector)) num = UtilityInventory.EquipPage;
-			{
-				var newVector2 = typeof(Vector2).GetConstructor(new[] {typeof(float), typeof(float)});
-				var pos = m.insns.Find(new InsnNode(m, OpCodes.Call, newVector2)).First();
-				var cursor = new InsnCursor(m.insns).After(pos);
+			var newVec2 = typeof(Vector2).GetConstructor(new[] {typeof(float), typeof(float)});
+			c.GotoNext(i => i.MatchCall(newVec2));
+			c.Index++;
 
-				cursor.Add(OpCodes.Ldloc, m.locals[1]);//vector
-				cursor.Hook(typeof(UtilityInventory).MethodByName(nameof(DrawPageIcons)));
-				var skip = new LabelNode();
-				cursor.Add(OpCodes.Brfalse, skip);
-				cursor.Add(OpCodes.Ldc_I4, EquipPage);
-				cursor.Add(OpCodes.Stloc, m.locals[0]);//num
-				cursor.Add(skip);
-			}
+			c.Emit(Ldloc, 1);//vector
+			c.EmitDelegate<Func<Vector2, bool>>(DrawPageIcons);
+			var endIfLabel = il.DefineLabel();
+			c.Emit(Brfalse, endIfLabel);
+			c.Emit(Ldc_I4, EquipPage);
+			c.Emit(Stloc, 0);//num
+			c.MarkLabel(endIfLabel);
 
 			//vector.X += 82 -> 52
-			m.insns.Find(new InsnNode(m, OpCodes.Ldc_R4, 82f)).Single()
-				.SingleInsn.FloatOperand = 52;
+			if (c.TryGotoNext(i => i.MatchLdcR4(82f)))
+				c.Next.Operand = 52f;
 
 			//vector.X -= 48 -> 40
-			foreach (var loc in m.insns.Find(new InsnNode(m, OpCodes.Ldc_R4, 48f)))
-				loc.SingleInsn.FloatOperand = 40;
+			while (c.TryGotoNext(i => i.MatchLdcR4(48f)))
+				c.Next.Operand = 40f;
 
+			//UtilityInventory.ItemEquipPage();
 			//before return num;
-			{
-				var pos = m.insns.Find(new InsnNode(m, OpCodes.Ret)).Single();
-				var cursor = new InsnCursor(m.insns).Before(pos).Skip(-1);
-				//UtilityInventory.ItemEquipPage();
-				cursor.Hook(typeof(UtilityInventory).MethodByName(nameof(ItemEquipPage)));
-			}
-
-			m.Inject();
+			c.GotoNext(i => i.MatchRet());
+			c.EmitDelegate(ItemEquipPage);
 		}
 
-		private static void HookArmorSwap() {
-			var met = typeof(ItemSlot).MethodByName("SwapEquip", typeof(Item[]), typeof(int), typeof(int));
-			var m = new MethodNode(met).ReadInsns();
+		private static void HookArmorSwap(HookIL il) {
+			HookILCursor c = il.At(0);
 
-			//before if (Main.projHook[inv[slot].shoot])
-			var pos = m.insns.Find(new InsnNode(m, OpCodes.Ldsfld, typeof(Main).FieldByName("projHook"))).Single();
+			//else if (UtilityInventory.ArmorSwapHook(player, inv, slot)) {}
+			//before else if (Main.projHook[inv[slot].shoot])
+			c.GotoNext(i => i.MatchLdsfld<Main>(nameof(Main.projHook)));
 
-			var endIf = pos.First.PrevInsn.LabelOperand;
-			var cursor = new InsnCursor(m.insns).Before(pos);
-
-			//insert if(UtilityInventory.ArmorSwapHook(player, inv, slot)) {} else
-			cursor.Add(OpCodes.Ldloc, m.locals[0]);
-			cursor.Add(OpCodes.Ldarg, m.parameters[0]);
-			cursor.Add(OpCodes.Ldarg, m.parameters[2]);
-			cursor.Hook(typeof (UtilityInventory).MethodByName(nameof(ArmorSwapHook)));
-			cursor.Add(OpCodes.Brtrue, endIf);
-
-			m.Inject();
+			var endIfLabel = c.Prev.Operand; //br endIf
+			c.MoveAfterLabel();
+			c.Emit(Ldloc, 0);//player
+			c.Emit(Ldarg, 0);//inv
+			c.Emit(Ldarg, 2);//slot
+			c.EmitDelegate<Func<Player, Item[], int, bool>>(ArmorSwapHook);
+			c.Emit(Brtrue, endIfLabel);
 		}
-		
-		[HarmonyPatch(typeof(Main))]
-		[HarmonyPatch("DrawPageIcons")]
-		class PatchDrawPageIcons
-		{
-			static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator)
-			{
-				var insns = new List<CodeInstruction>(instructions);
-				//if(UtilityInventory.DrawPageIcons(vector)) num = UtilityInventory.EquipPage;
-				{
-					var newVector2 = typeof(Vector2).GetConstructor(new[] {typeof(float), typeof(float)});
-					var pos = insns.Find(new CodeInstruction(OpCodes.Call, newVector2)).First();
-					var cursor = new InsnCursor(m.insns).After(pos);
-
-					cursor.Add(OpCodes.Ldloc, m.locals[1]);//vector
-					cursor.Hook(typeof(UtilityInventory).MethodByName(nameof(DrawPageIcons)));
-					var skip = new LabelNode();
-					cursor.Add(OpCodes.Brfalse, skip);
-					cursor.Add(OpCodes.Ldc_I4, EquipPage);
-					cursor.Add(OpCodes.Stloc, m.locals[0]);//num
-					cursor.Add(skip);
-				}
-
-				//vector.X += 82 -> 52
-				m.insns.Find(new InsnNode(m, OpCodes.Ldc_R4, 82f)).Single()
-					.SingleInsn.FloatOperand = 52;
-
-				//vector.X -= 48 -> 40
-				foreach (var loc in m.insns.Find(new InsnNode(m, OpCodes.Ldc_R4, 48f)))
-					loc.SingleInsn.FloatOperand = 40;
-
-				//before return num;
-				{
-					var pos = m.insns.Find(new InsnNode(m, OpCodes.Ret)).Single();
-					var cursor = new InsnCursor(m.insns).Before(pos).Skip(-1);
-					//UtilityInventory.ItemEquipPage();
-					cursor.Hook(typeof(UtilityInventory).MethodByName(nameof(ItemEquipPage)));
-				}
-			}
-		}
-#endregion
+		#endregion
 	}
 }

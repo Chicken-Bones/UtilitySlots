@@ -9,10 +9,11 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>UtilitySlots</RootNamespace>
     <AssemblyName>UtilitySlots</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -23,6 +24,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -33,13 +35,25 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="0Harmony">
-      <HintPath>lib\0Harmony.dll</HintPath>
+    <Reference Include="log4net">
+      <HintPath>..\..\tModLoader\references\log4net.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Cecil">
+      <HintPath>..\..\tModLoader\references\Mono.Cecil.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoMod.RuntimeDetour">
+      <HintPath>..\..\tModLoader\references\MonoMod.RuntimeDetour.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoMod.Utils">
+      <HintPath>..\..\tModLoader\references\MonoMod.Utils.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="Microsoft.Xna.Framework" />
     <Reference Include="Microsoft.Xna.Framework.Game" />
     <Reference Include="Microsoft.Xna.Framework.Graphics" />
+    <Reference Include="TerrariaHooks.Windows">
+      <HintPath>..\..\tModLoader\references\TerrariaHooks.Windows.dll</HintPath>
+    </Reference>
     <Reference Include="tModLoaderDebug">
       <HintPath>..\..\..\..\Games\SteamLibrary\steamapps\common\Terraria\tModLoaderDebug.exe</HintPath>
     </Reference>
@@ -57,12 +71,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="build.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\CodeChickenLib\CodeChickenLib.csproj">
-      <Project>{49de09ed-de30-4f46-b2ce-7b54314ab4e7}</Project>
-      <Name>CodeChickenLib</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

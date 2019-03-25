@@ -37,14 +37,14 @@ namespace UtilitySlots
 		}
 
 		public static void DrawSlot(SpriteBatch sb, Vector2 slotPos, Texture2D tex, Item item, Texture2D emptyTex = null) {
-			sb.Draw(tex, slotPos, null, Main.inventoryBack, 0f, 
+			sb.Draw(tex, slotPos, null, Main.inventoryBack, 0f,
 				default(Vector2), Main.inventoryScale, SpriteEffects.None, 0f);
 
 			if (item != null && item.type > 0 && item.stack > 0)
 				DrawItem(sb, item, slotPos, tex.Size());
 			else if (emptyTex != null)
-				sb.Draw(emptyTex, slotPos + tex.Size() * Main.inventoryScale / 2, 
-					null, Color.White * 0.35f, 0f, 
+				sb.Draw(emptyTex, slotPos + tex.Size() * Main.inventoryScale / 2,
+					null, Color.White * 0.35f, 0f,
 					emptyTex.Size() / 2, Main.inventoryScale, SpriteEffects.None, 0f);
 		}
 

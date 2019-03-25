@@ -2,7 +2,6 @@ displayName = Utility Slots
 version = 1.0
 author = Chicken Bones, Xel Ladia
 description = Extra slots for non-combat equipment
-modReferences = CodeChickenLib
 
 buildIgnore = *.csproj, *.user, obj\*, bin\*, .vs\*
 languageVersion = 6

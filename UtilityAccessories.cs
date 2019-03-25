@@ -16,7 +16,7 @@ namespace UtilitySlots
 
 			public virtual bool FullyFunctional => false;
 
-			public abstract void ApplyEffect(Player p, bool hideVisual, 
+			public abstract void ApplyEffect(Player p, bool hideVisual,
 				ref bool wallSpeedBuff, ref bool tileSpeedBuff, ref bool tileRangeBuff);
 
 			public virtual void ModifyTooltip(List<TooltipLine> tooltip) {
@@ -46,7 +46,7 @@ namespace UtilitySlots
 
 			public override bool FullyFunctional => true;
 
-			public override void ApplyEffect(Player p, bool hideVisual, 
+			public override void ApplyEffect(Player p, bool hideVisual,
 					ref bool wallSpeedBuff, ref bool tileSpeedBuff, ref bool tileRangeBuff) {
 				p.VanillaUpdateEquip(item);
 				p.VanillaUpdateAccessory(p.whoAmI, item, hideVisual, ref wallSpeedBuff, ref tileSpeedBuff, ref tileRangeBuff);
@@ -70,7 +70,7 @@ namespace UtilitySlots
 		private static List<Func<Item, Handler>> providers = new List<Func<Item, Handler>>();
 		private static Dictionary<int, Handler> itemIdHandlers = new Dictionary<int, Handler>();
 
-		public static Handler GetHandler(Item item) => 
+		public static Handler GetHandler(Item item) =>
 			providers.Select(provider => provider(item)).FirstOrDefault(handler => handler != null);
 
 		public static void AddProvider(Func<Item, Handler> provider) => providers.Add(provider);
@@ -84,8 +84,7 @@ namespace UtilitySlots
 
 		internal static void Load() {
 			providers.Add(item => {
-				Handler h;
-				itemIdHandlers.TryGetValue(item.type, out h);
+				itemIdHandlers.TryGetValue(item.type, out var h);
 				return h;
 			});
 
@@ -97,7 +96,7 @@ namespace UtilitySlots
 				ShinyRedBalloon, BalloonPufferfish,
 				CloudinaBalloon, SandstorminaBalloon, BlizzardinaBalloon,
 				FartInABalloon, HoneyBalloon, SharkronBalloon,
-				BundleofBalloons, 
+				BundleofBalloons,
 
 				LuckyHorseshoe, ObsidianHorseshoe,
 				BlueHorseshoeBalloon, WhiteHorseshoeBalloon, YellowHorseshoeBalloon,
@@ -111,40 +110,40 @@ namespace UtilitySlots
 				WaterWalkingBoots, ObsidianWaterWalkingBoots, LavaWaders,
 				FlowerBoots,
 
-				ClimbingClaws, ShoeSpikes, TigerClimbingGear, 
+				ClimbingClaws, ShoeSpikes, TigerClimbingGear,
 				Tabi, BlackBelt, MasterNinjaGear,
 				Flipper, JellyfishNecklace, DivingGear, DivingHelmet, JellyfishDivingGear, ArcticDivingGear,
 
 				HighTestFishingLine, AnglerEarring, TackleBox, AnglerTackleBag,
 
-				GoldRing, DiscountCard, CoinRing, GreedyRing, 
-				LaserRuler, CordageGuide, 
+				GoldRing, DiscountCard, CoinRing, GreedyRing,
+				LaserRuler, CordageGuide,
 				Toolbox, BrickLayer, ExtendoGrip, PaintSprayer, PortableCementMixer, Toolbelt, ArchitectGizmoPack);
 
 			AddDefaultHandler(MusicBox, MusicBoxTitle,
-				MusicBoxOverworldDay, MusicBoxAltOverworldDay, MusicBoxNight, 
-				MusicBoxRain, MusicBoxSnow, MusicBoxIce, 
-				MusicBoxDesert, MusicBoxOcean, MusicBoxSpace, 
-				MusicBoxUnderground, MusicBoxAltUnderground, MusicBoxMushrooms, MusicBoxJungle, 
-				MusicBoxCorruption, MusicBoxUndergroundCorruption, 
-				MusicBoxCrimson, MusicBoxUndergroundCrimson, 
-				MusicBoxTheHallow, MusicBoxUndergroundHallow, 
+				MusicBoxOverworldDay, MusicBoxAltOverworldDay, MusicBoxNight,
+				MusicBoxRain, MusicBoxSnow, MusicBoxIce,
+				MusicBoxDesert, MusicBoxOcean, MusicBoxSpace,
+				MusicBoxUnderground, MusicBoxAltUnderground, MusicBoxMushrooms, MusicBoxJungle,
+				MusicBoxCorruption, MusicBoxUndergroundCorruption,
+				MusicBoxCrimson, MusicBoxUndergroundCrimson,
+				MusicBoxTheHallow, MusicBoxUndergroundHallow,
 				MusicBoxHell, MusicBoxDungeon, MusicBoxTemple,
 				MusicBoxBoss1, MusicBoxBoss2, MusicBoxBoss3, MusicBoxBoss4, MusicBoxBoss5,
-				MusicBoxPlantera, MusicBoxEerie, MusicBoxEclipse, 
-				MusicBoxGoblins, MusicBoxPirates, MusicBoxMartians, 
-				MusicBoxPumpkinMoon, MusicBoxFrostMoon, 
+				MusicBoxPlantera, MusicBoxEerie, MusicBoxEclipse,
+				MusicBoxGoblins, MusicBoxPirates, MusicBoxMartians,
+				MusicBoxPumpkinMoon, MusicBoxFrostMoon,
 				MusicBoxTowers, MusicBoxLunarBoss);
 
-			AddHandler(MasterNinjaGear, new EquivalentHandler(TigerClimbingGear, Tabi).NegateTip("Tooltip2"));
-			AddHandler(ObsidianWaterWalkingBoots, new EquivalentHandler(WaterWalkingBoots).NegateTip("Tooltip2"));
-			AddHandler(ObsidianHorseshoe, new EquivalentHandler(LuckyHorseshoe).NegateTip("Tooltip2"));
-			AddHandler(HoneyBalloon, new EquivalentHandler(ShinyRedBalloon).NegateTip("Tooltip2"));
-			AddHandler(BalloonHorseshoeHoney, new EquivalentHandler(ShinyRedBalloon, LuckyHorseshoe).NegateTip("Tooltip"));
-			AddHandler(CoinRing, new EquivalentHandler(GoldRing).NegateTip("Tooltip2"));
-			AddHandler(GreedyRing, new EquivalentHandler(DiscountCard, GoldRing).NegateTip("Tooltip2"));
+			AddHandler(MasterNinjaGear, new EquivalentHandler(TigerClimbingGear, Tabi).NegateTip("Tooltip1"));
+			AddHandler(ObsidianWaterWalkingBoots, new EquivalentHandler(WaterWalkingBoots).NegateTip("Tooltip1"));
+			AddHandler(ObsidianHorseshoe, new EquivalentHandler(LuckyHorseshoe).NegateTip("Tooltip1"));
+			AddHandler(HoneyBalloon, new EquivalentHandler(ShinyRedBalloon).NegateTip("Tooltip1"));
+			AddHandler(BalloonHorseshoeHoney, new EquivalentHandler(ShinyRedBalloon, LuckyHorseshoe).NegateTip("Tooltip0"));
+			AddHandler(CoinRing, new EquivalentHandler(GoldRing).NegateTip("Tooltip1"));
+			AddHandler(GreedyRing, new EquivalentHandler(DiscountCard, GoldRing).NegateTip("Tooltip1"));
 
-			AddHandler(LavaWaders, new LavaWaderHandler().NegateTip("Tooltip2"));
+			AddHandler(LavaWaders, new LavaWaderHandler().NegateTip("Tooltip1"));
 		}
 
 		internal static void Unload() {
@@ -155,7 +154,7 @@ namespace UtilitySlots
 
 	internal class LavaWaderHandler : UtilityAccessories.Handler
 	{
-		public override void ApplyEffect(Player p, bool hideVisual, 
+		public override void ApplyEffect(Player p, bool hideVisual,
 				ref bool wallSpeedBuff, ref bool tileSpeedBuff, ref bool tileRangeBuff) {
 			p.waterWalk = true;
 		}
