@@ -15,6 +15,7 @@ using Terraria.ModLoader.IO;
 using Terraria.UI;
 using static UtilitySlots.UtilityAccessories;
 using static Mono.Cecil.Cil.OpCodes;
+using MonoMod.Cil;
 
 namespace UtilitySlots
 {
@@ -424,18 +425,17 @@ namespace UtilitySlots
 			IL.Terraria.UI.ItemSlot.SwapEquip_ItemArray_int_int += HookArmorSwap;
 		}
 
-		private static void HookDrawInventory(HookIL il) {
-			HookILCursor c = il.At(0);
+		private static void HookDrawInventory(ILContext il) {
+			var c = new ILCursor(il);
 
 			//else if (Main.EquipPage == UtilityInventory.EquipPage) UtilityInventory.DrawInventory(Main.mH)
 			//before else if (Main.EquipPage == 1)
-			c.GotoNext(
+			c.GotoNext(MoveType.AfterLabel,
 				i => i.MatchLdsfld<Main>(nameof(Main.EquipPage)),
 				i => i.MatchLdcI4(1));
 
 			var endIfLabel = c.Prev.Operand; //br endIf
-			var elseIfLabel = il.DefineLabel();
-			c.MoveAfterLabel();
+			var elseIfLabel = c.DefineLabel();
 			c.Emit(Ldsfld, typeof(Main).GetField(nameof(Main.EquipPage)));
             c.Emit(Ldc_I4, EquipPage);
             c.Emit(Bne_Un, elseIfLabel);
@@ -445,18 +445,17 @@ namespace UtilitySlots
 			c.MarkLabel(elseIfLabel);
 		}
 
-		private static void HookDrawPageIcons(HookIL il) {
-			HookILCursor c = il.At(0);
+		private static void HookDrawPageIcons(ILContext il) {
+			var c = new ILCursor(il);
 
 			//after Vector2 vector = new Vector2((float)(screenWidth - 162), (float)(142 + mH));
 			//if(UtilityInventory.DrawPageIcons(vector)) num = UtilityInventory.EquipPage;
 			var newVec2 = typeof(Vector2).GetConstructor(new[] {typeof(float), typeof(float)});
-			c.GotoNext(i => i.MatchCall(newVec2));
-			c.Index++;
+			c.GotoNext(MoveType.After, i => i.MatchCall(newVec2));
 
 			c.Emit(Ldloc, 1);//vector
 			c.EmitDelegate<Func<Vector2, bool>>(DrawPageIcons);
-			var endIfLabel = il.DefineLabel();
+			var endIfLabel = c.DefineLabel();
 			c.Emit(Brfalse, endIfLabel);
 			c.Emit(Ldc_I4, EquipPage);
 			c.Emit(Stloc, 0);//num
@@ -473,18 +472,17 @@ namespace UtilitySlots
 			//UtilityInventory.ItemEquipPage();
 			//before return num;
 			c.GotoNext(i => i.MatchRet());
-			c.EmitDelegate(ItemEquipPage);
+			c.EmitDelegate<Action>(ItemEquipPage);
 		}
 
-		private static void HookArmorSwap(HookIL il) {
-			HookILCursor c = il.At(0);
+		private static void HookArmorSwap(ILContext il) {
+			var c = new ILCursor(il);
 
 			//else if (UtilityInventory.ArmorSwapHook(player, inv, slot)) {}
 			//before else if (Main.projHook[inv[slot].shoot])
-			c.GotoNext(i => i.MatchLdsfld<Main>(nameof(Main.projHook)));
+			c.GotoNext(MoveType.AfterLabel, i => i.MatchLdsfld<Main>(nameof(Main.projHook)));
 
 			var endIfLabel = c.Prev.Operand; //br endIf
-			c.MoveAfterLabel();
 			c.Emit(Ldloc, 0);//player
 			c.Emit(Ldarg, 0);//inv
 			c.Emit(Ldarg, 2);//slot
