@@ -16,8 +16,7 @@ namespace UtilitySlots
 
 			public virtual bool FullyFunctional => false;
 
-			public abstract void ApplyEffect(Player p, bool hideVisual,
-				ref bool wallSpeedBuff, ref bool tileSpeedBuff, ref bool tileRangeBuff);
+			public abstract void ApplyEffect(Player p, bool hideVisual);
 
 			public virtual void ModifyTooltip(List<TooltipLine> tooltip) {
 				foreach (var line in tooltip) {
@@ -46,10 +45,9 @@ namespace UtilitySlots
 
 			public override bool FullyFunctional => true;
 
-			public override void ApplyEffect(Player p, bool hideVisual,
-					ref bool wallSpeedBuff, ref bool tileSpeedBuff, ref bool tileRangeBuff) {
+			public override void ApplyEffect(Player p, bool hideVisual) {
 				p.VanillaUpdateEquip(item);
-				p.VanillaUpdateAccessory(p.whoAmI, item, hideVisual, ref wallSpeedBuff, ref tileSpeedBuff, ref tileRangeBuff);
+				p.ApplyEquipFunctional(item, hideVisual);
 			}
 		}
 
@@ -61,9 +59,9 @@ namespace UtilitySlots
 				subHandlers = types.Select(type => new SingleTypeHandler(type)).ToList();
 			}
 
-			public override void ApplyEffect(Player p, bool hideVisual, ref bool wallSpeedBuff, ref bool tileSpeedBuff, ref bool tileRangeBuff) {
+			public override void ApplyEffect(Player p, bool hideVisual) {
 				foreach (var handler in subHandlers)
-					handler.ApplyEffect(p, hideVisual, ref wallSpeedBuff, ref tileSpeedBuff, ref tileRangeBuff);
+					handler.ApplyEffect(p, hideVisual);
 			}
 		}
 
@@ -156,8 +154,7 @@ namespace UtilitySlots
 
 	internal class LavaWaderHandler : UtilityAccessories.Handler
 	{
-		public override void ApplyEffect(Player p, bool hideVisual,
-				ref bool wallSpeedBuff, ref bool tileSpeedBuff, ref bool tileRangeBuff) {
+		public override void ApplyEffect(Player p, bool hideVisual) {
 			p.waterWalk = true;
 		}
 	}

@@ -40,9 +40,8 @@ namespace UtilitySlots
 		public BitsByte hideVisual = new BitsByte();
 		private bool handlingEquip;
 		private bool utilitySlotHover;
-		private PlayerDrawInfo shaderCache;
 
-		public int SlotCount => Enumerable.Range(Player.SupportedSlotsArmor, Player.SupportedSlotsAccs).Count(player.IsAValidEquipmentSlotForIteration);
+		public int SlotCount => Enumerable.Range(Player.SupportedSlotsArmor, Player.SupportedSlotsAccs).Count(Player.IsAValidEquipmentSlotForIteration);
 
 		public override void Initialize() {
 			for (int i = 0; i < items.Length; i++) {
@@ -63,25 +62,25 @@ namespace UtilitySlots
 
 		public override void SyncPlayer(int toWho, int fromWho, bool newPlayer) {
 			for (int i = 0; i < items.Length; i++)
-				NetHandler.SendSlot(toWho, player.whoAmI, i, items[i]);
+				NetHandler.SendSlot(toWho, Player.whoAmI, i, items[i]);
 			for (int i = 0; i < dyes.Length; i++)
-				NetHandler.SendSlot(toWho, player.whoAmI, i + items.Length, dyes[i]);
+				NetHandler.SendSlot(toWho, Player.whoAmI, i + items.Length, dyes[i]);
 
-			NetHandler.SendVisualState(toWho, player.whoAmI, hideVisual);
+			NetHandler.SendVisualState(toWho, Player.whoAmI, hideVisual);
 		}
 
 		public override void SendClientChanges(ModPlayer clientPlayer) {
 			var clientInv = (UtilityInventory) clientPlayer;
 			for (int i = 0; i < items.Length; i++)
 				if (items[i].IsNotTheSameAs(clientInv.items[i]))
-					NetHandler.SendSlot(-1, player.whoAmI, i, items[i]);
+					NetHandler.SendSlot(-1, Player.whoAmI, i, items[i]);
 
 			for (int i = 0; i < dyes.Length; i++)
 				if (dyes[i].IsNotTheSameAs(clientInv.dyes[i]))
-					NetHandler.SendSlot(-1, player.whoAmI, i + items.Length, dyes[i]);
+					NetHandler.SendSlot(-1, Player.whoAmI, i + items.Length, dyes[i]);
 
 			if (hideVisual != clientInv.hideVisual)
-				NetHandler.SendVisualState(-1, player.whoAmI, hideVisual);
+				NetHandler.SendVisualState(-1, Player.whoAmI, hideVisual);
 		}
 
 		public void SetSlot(byte slot, Item item) {
@@ -138,12 +137,12 @@ namespace UtilitySlots
 
 			//incompatible with main equipment item
 			for (int i = 0; i < SlotCount; i++)
-				if (Incompatible(item, player.armor[3 + i], false) ||
-					Incompatible(item, player.armor[13 + i], true))
+				if (Incompatible(item, Player.armor[3 + i], false) ||
+					Incompatible(item, Player.armor[13 + i], true))
 					return false;
 
 			//free slot for a partial utility accessory in the main equipment slots
-			if (!handler.FullyFunctional && Enumerable.Range(3, SlotCount).Any(i => player.armor[i].IsAir))
+			if (!handler.FullyFunctional && Enumerable.Range(3, SlotCount).Any(i => Player.armor[i].IsAir))
 				return false;
 
 			//insert into first empty slot
@@ -163,24 +162,23 @@ namespace UtilitySlots
 			return false;
 		}
 
-		public override void UpdateEquips(ref bool wallSpeedBuff, ref bool tileSpeedBuff, ref bool tileRangeBuff) {
+        public override void UpdateEquips() {
 			for (int i = 0; i < items.Length; i++) {
 				var item = items[i];
 				if (!item.IsAir)
-					GetHandler(item).ApplyEffect(player, hideVisual[i],
-						ref wallSpeedBuff, ref tileSpeedBuff, ref tileRangeBuff);
+					GetHandler(item).ApplyEffect(Player, hideVisual[i]);
 			}
 		}
 
 		public override void Kill(double damage, int hitDirection, bool pvp, PlayerDeathReason damageSource) {
-			if (Main.myPlayer == player.whoAmI && player.difficulty > 0) {
-				InvUtils.DropItems(player.position + player.Size/2, items);
-				InvUtils.DropItems(player.position + player.Size/2, dyes);
+			if (Main.myPlayer == Player.whoAmI && Player.difficulty > 0) {
+				InvUtils.DropItems(Player.position + Player.Size/2, items);
+				InvUtils.DropItems(Player.position + Player.Size/2, dyes);
 			}
 		}
 
 		private void HandleVisualTick(int slot) {
-			player.mouseInterface = true;
+			Player.mouseInterface = true;
 			if (Main.mouseLeft && Main.mouseLeftRelease)
 			{
 				hideVisual[slot] = !hideVisual[slot];
@@ -191,7 +189,7 @@ namespace UtilitySlots
 		}
 
 		private void HandleEquip(int slot) {
-			player.mouseInterface = true;
+			Player.mouseInterface = true;
 
 			if (slot >= SlotCount && !Main.mouseItem.IsAir)
 				return;
@@ -220,7 +218,7 @@ namespace UtilitySlots
 		}
 
 		private void HandleDye(int slot) {
-			player.mouseInterface = true;
+			Player.mouseInterface = true;
 			if (slot >= SlotCount && !Main.mouseItem.IsAir)
 				return;
 
@@ -277,85 +275,15 @@ namespace UtilitySlots
 		}
 
 
-		public override void FrameEffects() {
-			//act as if they're before regular equipment slots
-			shaderCache = new PlayerDrawInfo();
-			var freeHandon = player.handon <= 0;
-			var freeHandoff = player.handoff <= 0;
-			var freeBack = player.back <= 0;
-			var freeFront = player.front <= 0;
-			var freeShoe = player.shoe <= 0;
-			var freeWaist = player.waist <= 0;
-			var freeNeck = player.neck <= 0;
-			var freeFace = player.face <= 0;
-			var freeBallon = player.balloon <= 0;
-
+		public void UpdateVisibleAccessories() {
 			for (int i = 0; i < SlotCount; i++) {
 				var item = items[i];
+				if (item.wingSlot > 0 && !(hideVisual[i] && (Player.velocity.Y == 0f || Player.mount.Active)))
+					Player.wings = item.wingSlot;
 
-				if ((player.shield > 0 && item.frontSlot >= 1 && item.frontSlot <= 4) ||
-					(player.front >= 1 && player.front <= 4 && item.shieldSlot > 0)) continue;
-
-				if (item.wingSlot > 0 && player.wings == item.wingSlot &&
-						(!hideVisual[i] || (player.velocity.Y != 0f && !player.mount.Active))) {
-					player.wings = item.wingSlot;
-					shaderCache.wingShader = dyes[i].dye;
-				}
-
-				if (hideVisual[i])
-					continue;
-
-				if (freeHandon && item.handOnSlot > 0) {
-					player.handon = item.handOnSlot;
-					shaderCache.handOnShader = dyes[i].dye;
-				}
-				if (freeHandoff && item.handOffSlot > 0) {
-					player.handoff = item.handOffSlot;
-					shaderCache.handOffShader = dyes[i].dye;
-				}
-				//ignore the fact that back items after front items reset front items cause it seems dumb
-				if (freeBack && item.backSlot > 0) {
-					player.back = item.backSlot;
-					shaderCache.backShader = dyes[i].dye;
-				}
-				if (freeFront && item.frontSlot > 0) {
-					player.front = item.frontSlot;
-					shaderCache.frontShader = dyes[i].dye;
-				}
-				if (freeShoe && item.shoeSlot > 0) {
-					player.shoe = item.shoeSlot;
-					shaderCache.shoeShader = dyes[i].dye;
-				}
-				if (freeWaist && item.waistSlot > 0) {
-					player.waist = item.waistSlot;
-					shaderCache.waistShader = dyes[i].dye;
-				}
-				if (freeNeck && item.neckSlot > 0) {
-					player.neck = item.neckSlot;
-					shaderCache.neckShader = dyes[i].dye;
-				}
-				if (freeFace && item.faceSlot > 0) {
-					player.face = item.faceSlot;
-					shaderCache.faceShader = dyes[i].dye;
-				}
-				if (freeBallon && item.balloonSlot > 0) {
-					player.balloon = item.balloonSlot;
-					shaderCache.balloonShader = dyes[i].dye;
-				}
+				if (!hideVisual[i] && !Player.ItemIsVisuallyIncompatible(item))
+					Player.UpdateVisibleAccessory(item);
 			}
-		}
-
-		public override void ModifyDrawInfo(ref PlayerDrawInfo drawInfo) {
-			if (shaderCache.wingShader > 0) drawInfo.wingShader = shaderCache.wingShader;
-			if (shaderCache.handOnShader > 0) drawInfo.handOnShader = shaderCache.handOnShader;
-			if (shaderCache.handOffShader > 0) drawInfo.handOffShader = shaderCache.handOffShader;
-			if (shaderCache.backShader > 0) drawInfo.backShader = shaderCache.backShader;
-			if (shaderCache.frontShader > 0) drawInfo.frontShader = shaderCache.frontShader;
-			if (shaderCache.shoeShader > 0) drawInfo.shoeShader = shaderCache.shoeShader;
-			if (shaderCache.waistShader > 0) drawInfo.waistShader = shaderCache.waistShader;
-			if (shaderCache.neckShader > 0) drawInfo.neckShader = shaderCache.neckShader;
-			if (shaderCache.faceShader > 0) drawInfo.faceShader = shaderCache.faceShader;
-			if (shaderCache.balloonShader > 0) drawInfo.balloonShader = shaderCache.balloonShader;
 		}
 
 		#region Hooks
@@ -404,6 +332,7 @@ namespace UtilitySlots
 		}
 
 		internal static void Hook() {
+			On.Terraria.Player.UpdateVisibleAccessories += (orig, self) => { self.UtilityInv().UpdateVisibleAccessories(); orig(self); };
 			IL.Terraria.Main.DrawInventory += HookDrawInventory;
 			IL.Terraria.Main.DrawPageIcons += HookDrawPageIcons;
 			IL.Terraria.UI.ItemSlot.SwapEquip_ItemArray_int_int += HookArmorSwap;
