@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
+using Terraria.GameContent;
 using Terraria.ModLoader;
 using Terraria.UI;
 
@@ -37,10 +38,9 @@ namespace UtilitySlots
 		}
 
 		public static void DrawSlot(SpriteBatch sb, Vector2 slotPos, Texture2D tex, Item item, Texture2D emptyTex = null) {
-			sb.Draw(tex, slotPos, null, Main.inventoryBack, 0f,
-				default(Vector2), Main.inventoryScale, SpriteEffects.None, 0f);
+			sb.Draw(tex, slotPos, null, Main.inventoryBack, 0f, default, Main.inventoryScale, SpriteEffects.None, 0f);
 
-			if (item != null && item.type > 0 && item.stack > 0)
+			if (item != null && !item.IsAir)
 				DrawItem(sb, item, slotPos, tex.Size());
 			else if (emptyTex != null)
 				sb.Draw(emptyTex, slotPos + tex.Size() * Main.inventoryScale / 2,
@@ -49,7 +49,8 @@ namespace UtilitySlots
 		}
 
 		public static void DrawItem(SpriteBatch sb, Item item, Vector2 slotPos, Vector2 slotSize) {
-			var itemTexture = Main.itemTexture[item.type];
+			Main.instance.LoadItem(item.type);
+			var itemTexture = TextureAssets.Item[item.type].Value;
 			var frame = Main.itemAnimations[item.type] != null ? Main.itemAnimations[item.type].GetFrame(itemTexture) : itemTexture.Frame();
 			var lightColor = Color.White;
 			float itemScale = 1f;

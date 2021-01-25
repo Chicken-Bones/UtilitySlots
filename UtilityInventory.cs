@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Mono.Cecil.Cil;
-using MonoMod.RuntimeDetour.HookGen;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.GameContent.Achievements;
@@ -16,6 +13,8 @@ using Terraria.UI;
 using static UtilitySlots.UtilityAccessories;
 using static Mono.Cecil.Cil.OpCodes;
 using MonoMod.Cil;
+using Terraria.Audio;
+using Terraria.GameContent;
 
 namespace UtilitySlots
 {
@@ -30,7 +29,7 @@ namespace UtilitySlots
 		public override bool CloneNewInstances => false;
 
 		public static bool Incompatible(Item item1, Item item2, bool vanity) {
-			return item1.type > 0 && item2.type > 0 &&
+			return !item1.IsAir && !item2.IsAir &&
 				   (item1.IsTheSameAs(item2) || !vanity && item1.wingSlot > 0 && item2.wingSlot > 0);
 		}
 
@@ -43,7 +42,7 @@ namespace UtilitySlots
 		private bool utilitySlotHover;
 		private PlayerDrawInfo shaderCache;
 
-		public int SlotCount => 5 + player.extraAccessorySlots;
+		public int SlotCount => Enumerable.Range(Player.SupportedSlotsArmor, Player.SupportedSlotsAccs).Count(player.IsAValidEquipmentSlotForIteration);
 
 		public override void Initialize() {
 			for (int i = 0; i < items.Length; i++) {
@@ -106,24 +105,12 @@ namespace UtilitySlots
 			hideVisual = tag.GetByte("hideVisual");
 		}
 
-		public override void LoadLegacy(BinaryReader r) {
-			r.ReadByte();//version
-
-			foreach (var item in items)
-				ItemIO.LoadLegacy(item, r);
-
-			foreach (var item in dyes)
-				ItemIO.LoadLegacy(item, r);
-
-			hideVisual = r.ReadByte();
-		}
-
 		/// <summary>
 		/// Should we prevent the item being put into the slot?
 		/// </summary>
 		internal bool AccCheck(Item item, int slot) {
 			if (handlingEquip) {
-				if (item.type > 0 && GetHandler(item) == null)
+				if (!item.IsAir && GetHandler(item) == null)
 					return true;
 
 				if (Incompatible(items[slot], item, false))//if the item is incompatible with this slot, it's fine to swap it
@@ -156,12 +143,12 @@ namespace UtilitySlots
 					return false;
 
 			//free slot for a partial utility accessory in the main equipment slots
-			if (!handler.FullyFunctional && Enumerable.Range(3, SlotCount).Any(i => player.armor[i].type <= 0))
+			if (!handler.FullyFunctional && Enumerable.Range(3, SlotCount).Any(i => player.armor[i].IsAir))
 				return false;
 
 			//insert into first empty slot
 			for (int i = 0; i < SlotCount; i++) {
-				if (items[i].type == 0) {
+				if (items[i].IsAir) {
 					InvUtils.Swap(ref items[i], ref item);
 					return true;
 				}
@@ -179,7 +166,7 @@ namespace UtilitySlots
 		public override void UpdateEquips(ref bool wallSpeedBuff, ref bool tileSpeedBuff, ref bool tileRangeBuff) {
 			for (int i = 0; i < items.Length; i++) {
 				var item = items[i];
-				if (item.type > 0)
+				if (!item.IsAir)
 					GetHandler(item).ApplyEffect(player, hideVisual[i],
 						ref wallSpeedBuff, ref tileSpeedBuff, ref tileRangeBuff);
 			}
@@ -197,7 +184,7 @@ namespace UtilitySlots
 			if (Main.mouseLeft && Main.mouseLeftRelease)
 			{
 				hideVisual[slot] = !hideVisual[slot];
-				Main.PlaySound(12);
+				SoundEngine.PlaySound(12);
 			}
 			Main.HoverItem = new Item();
 			Main.hoverItemName = Lang.inter[hideVisual[slot] ? 60 : 59].Value;
@@ -206,7 +193,7 @@ namespace UtilitySlots
 		private void HandleEquip(int slot) {
 			player.mouseInterface = true;
 
-			if (slot >= SlotCount && Main.mouseItem.type > 0)
+			if (slot >= SlotCount && !Main.mouseItem.IsAir)
 				return;
 
 			handlingEquip = true;
@@ -222,7 +209,7 @@ namespace UtilitySlots
 			}
 			handlingEquip = false;
 
-			if (items[slot].type > 0) {
+			if (!items[slot].IsAir) {
 				Main.HoverItem = items[slot].Clone();
 				Main.hoverItemName = items[slot].Name;
 				utilitySlotHover = true;
@@ -234,7 +221,7 @@ namespace UtilitySlots
 
 		private void HandleDye(int slot) {
 			player.mouseInterface = true;
-			if (slot >= SlotCount && Main.mouseItem.type > 0)
+			if (slot >= SlotCount && !Main.mouseItem.IsAir)
 				return;
 
 			ItemSlot.Handle(dyes, ItemSlot.Context.EquipDye, slot);
@@ -246,21 +233,21 @@ namespace UtilitySlots
 			Main.inventoryScale = 0.85f;
 			var mousePoint = new Point(Main.mouseX, Main.mouseY);
 
-			var slotTex = UtilitySlots.Instance.GetTexture("assets/background");
-			var slotBgTex = UtilitySlots.Instance.GetTexture("assets/slot_bg_utility");
+			//TODO: learn how texture loading is supposed to work?
+			var slotTex = UtilitySlots.Instance.GetTexture("assets/background").Value;
+			var slotBgTex = UtilitySlots.Instance.GetTexture("assets/slot_bg_utility").Value;
 			var slotSize = (int)(slotTex.Width*Main.inventoryScale);
-			var x = Main.screenWidth - 92;
-			var y = mH + 174;
-
-			int numToDraw = SlotCount;
-			if (numToDraw == 5 && items[5].type > 0 || dyes[5].type > 0)
-				numToDraw++;
-
+			var slotPos = new Point(Main.screenWidth - 92, mH + 174);
+			
 			var defaultInventoryBack = Main.inventoryBack;
-			for (int i = 0; i < numToDraw; i++) {
-				var r = new Rectangle(x, y + 47 * i, slotSize, slotSize);
+			for (int i = 0; i < Player.SupportedSlotsAccs; i++) {
+				if (i >= SlotCount && items[i].IsAir && dyes[i].IsAir)
+					continue;
 
-				var visualTex = Main.inventoryTickOnTexture;
+				var r = new Rectangle(slotPos.X, slotPos.Y, slotSize, slotSize);
+				slotPos.Y += 47;
+
+				var visualTex = (hideVisual[i] ? TextureAssets.InventoryTickOff : TextureAssets.InventoryTickOn).Value;
 				var visualRect = new Rectangle(r.Right - 10, r.Top - 2, visualTex.Width, visualTex.Height);
 
 				if (visualRect.Contains(mousePoint))
@@ -268,13 +255,10 @@ namespace UtilitySlots
 				else if (r.Contains(mousePoint))
 					HandleEquip(i);
 
-				if (i >= SlotCount)
+				if (i >= SlotCount) 
 					Main.inventoryBack = new Color(80, 80, 80, 80);
 
 				InvUtils.DrawSlot(sb, r.TopLeft(), slotTex, items[i], slotBgTex);
-
-				if (hideVisual[i])
-					visualTex = Main.inventoryTickOffTexture;
 				sb.Draw(visualTex, visualRect.TopLeft(), Color.White * 0.7f);
 
 				//dye
@@ -288,7 +272,7 @@ namespace UtilitySlots
 		}
 
 		internal void ModifyTooltips(Item item, List<TooltipLine> tooltip) {
-			if (utilitySlotHover && item.type > 0)
+			if (utilitySlotHover && !item.IsAir)
 				GetHandler(item).ModifyTooltip(tooltip);
 		}
 
@@ -388,12 +372,12 @@ namespace UtilitySlots
 			pos.Y += 2f;
 			float scale = 0.8f;
 
-			var tex = UtilitySlots.Instance.GetTexture("assets/btn_ua_"+(Main.EquipPage == EquipPage ? 1 : 0));
+			var tex = UtilitySlots.Instance.GetTexture("assets/btn_ua_"+(Main.EquipPage == EquipPage ? 1 : 0)).Value;
 			bool highlight = false;
 			if (Collision.CheckAABBvAABBCollision(pos, tex.Size(), new Vector2(Main.mouseX, Main.mouseY), Vector2.One) &&
 					(Main.mouseItem.stack < 1 || GetHandler(Main.mouseItem) != null || Main.mouseItem.dye > 0)) {
 				highlight = true;
-				Main.spriteBatch.Draw(UtilitySlots.Instance.GetTexture("assets/btn_ua_2"),
+				Main.spriteBatch.Draw(UtilitySlots.Instance.GetTexture("assets/btn_ua_2").Value,
 					pos, null, Main.OurFavoriteColor, 0f, new Vector2(2f), scale, SpriteEffects.None, 0f);
 			}
 			Main.spriteBatch.Draw(tex, pos, null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
@@ -412,7 +396,7 @@ namespace UtilitySlots
 			if (!player.UtilityInv().ArmorSwap(ref inv[slot]))
 				return false;
 
-			Main.PlaySound(7);
+			SoundEngine.PlaySound(7);
 			Recipe.FindRecipes();
 			Main.EquipPageSelected = EquipPage;
 			AchievementsHelper.HandleOnEquip(player, inv[slot], ItemSlot.Context.EquipAccessory);
@@ -448,7 +432,7 @@ namespace UtilitySlots
 		private static void HookDrawPageIcons(ILContext il) {
 			var c = new ILCursor(il);
 
-			//after Vector2 vector = new Vector2((float)(screenWidth - 162), (float)(142 + mH));
+			//after Vector2 vector = new Vector2(screenWidth - 162, yPos);
 			//if(UtilityInventory.DrawPageIcons(vector)) num = UtilityInventory.EquipPage;
 			var newVec2 = typeof(Vector2).GetConstructor(new[] {typeof(float), typeof(float)});
 			c.GotoNext(MoveType.After, i => i.MatchCall(newVec2));
