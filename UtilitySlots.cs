@@ -1,22 +1,17 @@
-﻿using System.IO;
+﻿using Terraria;
 using Terraria.ModLoader;
 
 namespace UtilitySlots
 {
-	public class UtilitySlots : Mod
+    public class UtilitySlots : Mod
 	{
 		public static UtilitySlots Instance { get; private set; }
-
-		public UtilitySlots() {
-			Properties = new ModProperties {
-				Autoload = true
-			};
-		}
 
 		public override void Load() {
 			Instance = this;
 
-			UtilityInventory.Hook();
+			for (int i = 0; i < Player.SupportedSlotsAccs; i++)
+				AddContent(new UtilitySlot(i));
 		}
 
 		public override void PostSetupContent() {
@@ -29,6 +24,6 @@ namespace UtilitySlots
 			Instance = null;
 		}
 
-		public override void HandlePacket(BinaryReader reader, int whoAmI) => NetHandler.HandlePacket(reader, whoAmI);
+		//public override void HandlePacket(BinaryReader reader, int whoAmI) => NetHandler.HandlePacket(reader, whoAmI);
 	}
 }

@@ -40,7 +40,7 @@ namespace UtilitySlots
 			protected readonly Item item;
 
 			public SingleTypeHandler(int itemId) {
-				item = InvUtils.Default(itemId, true);
+				item = new Item(itemId);
 			}
 
 			public override bool FullyFunctional => true;
