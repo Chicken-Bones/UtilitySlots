@@ -1,83 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ModLoader;
-using static Terraria.ID.ItemID;
+using UtilitySlots.Handlers;
 
 namespace UtilitySlots
 {
-	public class UtilityAccessories : ILoadable
+    public class UtilityAccessories : ILoadable
 	{
-		public abstract class Handler
-		{
-			public IList<string> negatedTipLines = new List<string>();
+		private static List<Func<Item, UtilityItemHandler>> providers = new List<Func<Item, UtilityItemHandler>>();
+		private static Dictionary<int, UtilityItemHandler> itemIdHandlers = new Dictionary<int, UtilityItemHandler>();
 
-			public virtual bool FullyFunctional => false;
-
-			public abstract void ApplyEffect(Player p, bool hideVisual);
-
-			public virtual void ModifyTooltip(List<TooltipLine> tooltip) {
-				foreach (var line in tooltip) {
-					if (line.isModifier) {
-						line.overrideColor = Color.Gray;
-						line.text = "Modifiers have no effect";
-					}
-					if (negatedTipLines.Contains(line.Name))
-						line.overrideColor = Color.Gray;
-				}
-			}
-
-			public Handler NegateTip(params string[] lines) {
-				negatedTipLines = lines;
-				return this;
-			}
-		}
-
-		public class SingleTypeHandler : Handler
-		{
-			protected readonly Item item;
-
-			public SingleTypeHandler(int itemId) {
-				item = new Item(itemId);
-			}
-
-			public override bool FullyFunctional => true;
-
-			public override void ApplyEffect(Player p, bool hideVisual) {
-				p.VanillaUpdateEquip(item);
-				p.ApplyEquipFunctional(item, hideVisual);
-			}
-		}
-
-		public class EquivalentHandler : Handler
-		{
-			public IList<SingleTypeHandler> subHandlers;
-
-			public EquivalentHandler(params int[] types) {
-				subHandlers = types.Select(type => new SingleTypeHandler(type)).ToList();
-			}
-
-			public override void ApplyEffect(Player p, bool hideVisual) {
-				foreach (var handler in subHandlers)
-					handler.ApplyEffect(p, hideVisual);
-			}
-		}
-
-		private static List<Func<Item, Handler>> providers = new List<Func<Item, Handler>>();
-		private static Dictionary<int, Handler> itemIdHandlers = new Dictionary<int, Handler>();
-
-		public static Handler GetHandler(Item item) =>
+		public static UtilityItemHandler GetHandler(Item item) =>
 			providers.Select(provider => provider(item)).FirstOrDefault(handler => handler != null);
 
-		public static void AddProvider(Func<Item, Handler> provider) => providers.Add(provider);
+		public static void AddProvider(Func<Item, UtilityItemHandler> provider) => providers.Add(provider);
 
-		public static void AddHandler(int itemId, Handler handler) => itemIdHandlers[itemId] = handler;
+		public static void AddHandler(int itemId, UtilityItemHandler handler) => itemIdHandlers[itemId] = handler;
 
-		public static void AddDefaultHandler(params int[] itemIds) {
+		public static void AddUtilityAccessory(params int[] itemIds) {
 			foreach (var itemId in itemIds)
-				AddHandler(itemId, new SingleTypeHandler(itemId));
+				AddHandler(itemId, new FullyFunctionalHandler(itemId));
 		}
 
 		void ILoadable.Load(Mod mod) {
@@ -88,62 +32,10 @@ namespace UtilitySlots
 			});
 
 			// wing provider
-			AddProvider(item => item.wingSlot > 0 ? new SingleTypeHandler(item.type) : null);
+			AddProvider(item => item.wingSlot > 0 ? new FullyFunctionalHandler(item.type) : null);
 
-			AddDefaultHandler(
-				CloudinaBottle, SandstorminaBottle, BlizzardinaBottle, FartinaJar, TsunamiInABottle,
-
-				ShinyRedBalloon, BalloonPufferfish,
-				CloudinaBalloon, SandstorminaBalloon, BlizzardinaBalloon,
-				FartInABalloon, HoneyBalloon, SharkronBalloon,
-				BundleofBalloons,
-
-				LuckyHorseshoe, ObsidianHorseshoe,
-				BlueHorseshoeBalloon, WhiteHorseshoeBalloon, YellowHorseshoeBalloon,
-				BalloonHorseshoeFart, BalloonHorseshoeHoney, BalloonHorseshoeSharkron,
-
-				Aglet, AnkletoftheWind,
-				FrogLeg, FlyingCarpet,
-
-				IceSkates, HermesBoots, FlurryBoots, SailfishBoots, RocketBoots,
-				SpectreBoots, LightningBoots, FrostsparkBoots,
-				WaterWalkingBoots, ObsidianWaterWalkingBoots, LavaWaders,
-				FlowerBoots,
-
-				ClimbingClaws, ShoeSpikes, TigerClimbingGear,
-				Tabi, BlackBelt, MasterNinjaGear,
-				Flipper, JellyfishNecklace, DivingGear, DivingHelmet, JellyfishDivingGear, ArcticDivingGear,
-
-				HighTestFishingLine, AnglerEarring, TackleBox, AnglerTackleBag,
-
-				GoldRing, DiscountCard, CoinRing, GreedyRing,
-				LaserRuler, CordageGuide,
-				Toolbox, BrickLayer, ExtendoGrip, PaintSprayer, PortableCementMixer, Toolbelt, ArchitectGizmoPack);
-
-			AddDefaultHandler(MusicBox, MusicBoxTitle,
-				MusicBoxOverworldDay, MusicBoxAltOverworldDay, MusicBoxNight,
-				MusicBoxRain, MusicBoxSnow, MusicBoxIce,
-				MusicBoxDesert, MusicBoxOcean, MusicBoxSpace,
-				MusicBoxUnderground, MusicBoxAltUnderground, MusicBoxMushrooms, MusicBoxJungle,
-				MusicBoxCorruption, MusicBoxUndergroundCorruption,
-				MusicBoxCrimson, MusicBoxUndergroundCrimson,
-				MusicBoxTheHallow, MusicBoxUndergroundHallow,
-				MusicBoxHell, MusicBoxDungeon, MusicBoxTemple,
-				MusicBoxBoss1, MusicBoxBoss2, MusicBoxBoss3, MusicBoxBoss4, MusicBoxBoss5,
-				MusicBoxPlantera, MusicBoxEerie, MusicBoxEclipse,
-				MusicBoxGoblins, MusicBoxPirates, MusicBoxMartians,
-				MusicBoxPumpkinMoon, MusicBoxFrostMoon,
-				MusicBoxTowers, MusicBoxLunarBoss);
-
-			AddHandler(MasterNinjaGear, new EquivalentHandler(TigerClimbingGear, Tabi).NegateTip("Tooltip1"));
-			AddHandler(ObsidianWaterWalkingBoots, new EquivalentHandler(WaterWalkingBoots).NegateTip("Tooltip1"));
-			AddHandler(ObsidianHorseshoe, new EquivalentHandler(LuckyHorseshoe).NegateTip("Tooltip1"));
-			AddHandler(HoneyBalloon, new EquivalentHandler(ShinyRedBalloon).NegateTip("Tooltip1"));
-			AddHandler(BalloonHorseshoeHoney, new EquivalentHandler(ShinyRedBalloon, LuckyHorseshoe).NegateTip("Tooltip0"));
-			AddHandler(CoinRing, new EquivalentHandler(GoldRing).NegateTip("Tooltip1"));
-			AddHandler(GreedyRing, new EquivalentHandler(DiscountCard, GoldRing).NegateTip("Tooltip1"));
-
-			AddHandler(LavaWaders, new LavaWaderHandler().NegateTip("Tooltip1"));
+			// music box provider
+			//AddProvider(item => MusicLoader.itemToMusic.ContainsKey(item.type) ? new FullyFunctionalHandler(item.type) : null);
 		}
 
 		void ILoadable.Unload() {
@@ -151,11 +43,4 @@ namespace UtilitySlots
 			itemIdHandlers.Clear();
 		}
     }
-
-	internal class LavaWaderHandler : UtilityAccessories.Handler
-	{
-		public override void ApplyEffect(Player p, bool hideVisual) {
-			p.waterWalk = true;
-		}
-	}
 }
