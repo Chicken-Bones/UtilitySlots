@@ -28,8 +28,8 @@ namespace UtilitySlots
 
         public override bool IsHidden() => !UtilitySlotsEquipPage.IsSelected;
 
-        public override bool CanAcceptItem(Item checkItem) => 
-            UtilityAccessories.GetHandler(checkItem) != null;
+        public override bool CanAcceptItem(Item checkItem, AccessorySlotType slotType) =>
+            slotType == AccessorySlotType.DyeSlot || slotType == AccessorySlotType.FunctionalSlot && UtilityAccessories.GetHandler(checkItem) != null;
 
         public override bool ModifyDefaultSwapSlot(Item item, int accSlotToSwapTo) =>
             IsEmpty && (UtilityAccessories.GetHandler(item)?.FullyFunctional ?? false);
@@ -39,8 +39,8 @@ namespace UtilitySlots
             Player.ApplyEquipVanity(VanityItem);
         }
 
-        public override void OnMouseHover(int context) {
-            if (context == -10) {
+        public override void OnMouseHover(AccessorySlotType context) {
+            if (context == AccessorySlotType.FunctionalSlot) {
                 if (FunctionalItem.IsAir)
                     Main.hoverItemName = "Utility Accessory";
                 else
