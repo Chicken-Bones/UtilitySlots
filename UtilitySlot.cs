@@ -1,4 +1,6 @@
-﻿using Terraria;
+﻿using Microsoft.Xna.Framework;
+using System.Collections.Generic;
+using Terraria;
 using Terraria.ModLoader;
 
 namespace UtilitySlots
@@ -18,9 +20,7 @@ namespace UtilitySlots
 
         public override string FunctionalTexture => "UtilitySlots/assets/slot_bg_utility";
 
-        public override int XLoc => Main.screenWidth - 64 - 28;
-
-        public override int YLoc => AccessorySlotLoader.DrawVerticalAlignment + (int)(index * 56 * Main.inventoryScale);
+        public override Vector2? CustomLocation => new Vector2(Main.screenWidth - 64 - 28, AccessorySlotLoader.DrawVerticalAlignment + (int)(index * 56 * Main.inventoryScale));
 
         public override bool DrawVanitySlot => false;
 
@@ -37,6 +37,25 @@ namespace UtilitySlots
         public override void ApplyEquipEffects() {
             UtilityAccessories.GetHandler(FunctionalItem)?.ApplyEffect(Player, HideVisuals);
             Player.ApplyEquipVanity(VanityItem);
+        }
+
+        public override void OnMouseHover(int context) {
+            if (context == -10) {
+                if (FunctionalItem.IsAir)
+                    Main.hoverItemName = "Utility Accessory";
+                else
+                    GlobalItemHook.UtilityHoverItem = Main.HoverItem;
+            }
+        }
+
+        private class GlobalItemHook : GlobalItem
+        {
+            public static Item UtilityHoverItem;
+
+            public override void ModifyTooltips(Item item, List<TooltipLine> tooltips) {
+                if (item == UtilityHoverItem)
+                    UtilityAccessories.GetHandler(item).ModifyTooltip(tooltips);
+            }
         }
     }
 }

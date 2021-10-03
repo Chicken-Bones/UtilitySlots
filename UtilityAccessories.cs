@@ -8,7 +8,7 @@ using static Terraria.ID.ItemID;
 
 namespace UtilitySlots
 {
-	public static class UtilityAccessories
+	public class UtilityAccessories : ILoadable
 	{
 		public abstract class Handler
 		{
@@ -80,7 +80,7 @@ namespace UtilitySlots
 				AddHandler(itemId, new SingleTypeHandler(itemId));
 		}
 
-		internal static void Load() {
+		void ILoadable.Load(Mod mod) {
 			// default handler provider
 			AddProvider(item => {
 				itemIdHandlers.TryGetValue(item.type, out var h);
@@ -146,11 +146,11 @@ namespace UtilitySlots
 			AddHandler(LavaWaders, new LavaWaderHandler().NegateTip("Tooltip1"));
 		}
 
-		internal static void Unload() {
+		void ILoadable.Unload() {
 			providers.Clear();
 			itemIdHandlers.Clear();
 		}
-	}
+    }
 
 	internal class LavaWaderHandler : UtilityAccessories.Handler
 	{

@@ -5,6 +5,7 @@ using Terraria.ModLoader.IO;
 
 namespace UtilitySlots
 {
+	// For moving legacy data
     public class UtilityInventory : ModPlayer
 	{
 		public override void SaveData(TagCompound tag) {}
