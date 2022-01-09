@@ -21,23 +21,32 @@ namespace UtilitySlots
 				BlueHorseshoeBalloon, WhiteHorseshoeBalloon, YellowHorseshoeBalloon,
 				BalloonHorseshoeFart, BalloonHorseshoeHoney, BalloonHorseshoeSharkron,
 
-				Aglet, AnkletoftheWind,
-				FrogLeg, FlyingCarpet,
+				Aglet, AnkletoftheWind, Magiluminescence,
+				FrogLeg, FlyingCarpet,				
 
-				IceSkates, HermesBoots, FlurryBoots, SailfishBoots, RocketBoots,
-				SpectreBoots, LightningBoots, FrostsparkBoots,
+				IceSkates, HermesBoots, FlurryBoots, SailfishBoots, SandBoots, RocketBoots,
+				SpectreBoots, LightningBoots, FrostsparkBoots, AmphibianBoots, 
 				WaterWalkingBoots, ObsidianWaterWalkingBoots, LavaWaders,
-				FlowerBoots,
+				FlowerBoots, FairyBoots,
+
+				EmpressFlightBooster, GravityGlobe, 
 
 				ClimbingClaws, ShoeSpikes, TigerClimbingGear,
 				Tabi, BlackBelt, MasterNinjaGear,
-				Flipper, JellyfishNecklace, DivingGear, DivingHelmet, JellyfishDivingGear, ArcticDivingGear,
+				Flipper, FrogFlipper, FrogWebbing, FrogGear,
+				FloatingTube, JellyfishNecklace, DivingGear, DivingHelmet, JellyfishDivingGear, ArcticDivingGear, NeptunesShell,
 
-				HighTestFishingLine, AnglerEarring, TackleBox, AnglerTackleBag,
+				HighTestFishingLine, AnglerEarring, TackleBox, AnglerTackleBag, LavaFishingHook, LavaproofTackleBag,
 
-				GoldRing, DiscountCard, CoinRing, GreedyRing,
-				LaserRuler, CordageGuide,
-				Toolbox, BrickLayer, ExtendoGrip, PaintSprayer, PortableCementMixer, Toolbelt, ArchitectGizmoPack);
+				GoldRing, DiscountCard, CoinRing, GreedyRing, TreasureMagnet,
+				PortableStool, GolfBall, CordageGuide, DontStarveShaderItem, 
+				LaserRuler, SpectreGoggles, MechanicalLens,
+				Toolbox, BrickLayer, ExtendoGrip, PaintSprayer, PortableCementMixer, Toolbelt, ArchitectGizmoPack, AncientChisel, ActuationAccessory,
+
+				CopperWatch, TinWatch, SilverWatch, TungstenWatch, GoldWatch, PlatinumWatch,
+				Compass, DepthMeter, GPS, FishermansGuide, WeatherRadio, Sextant, FishFinder, MetalDetector, Stopwatch, DPSMeter, GoblinTech, TallyCounter, LifeformAnalyzer, Radar, REK, PDA
+				);
+
 
 			// TODO: I think there's a way to detect music boxes
 			AddUtilityAccessory(MusicBox, MusicBoxTitle,
@@ -53,7 +62,9 @@ namespace UtilitySlots
 				MusicBoxPlantera, MusicBoxEerie, MusicBoxEclipse,
 				MusicBoxGoblins, MusicBoxPirates, MusicBoxMartians,
 				MusicBoxPumpkinMoon, MusicBoxFrostMoon,
-				MusicBoxTowers, MusicBoxLunarBoss);
+				MusicBoxTowers, MusicBoxLunarBoss); 
+
+			// TODO, TerraSpark Boots, Moon Shell, Hellfire Treads
 
 			AddHandler(MasterNinjaGear, new EquivalentItemsHandler(TigerClimbingGear, Tabi).NegateTip("Tooltip1"));
 			AddHandler(ObsidianWaterWalkingBoots, new EquivalentItemsHandler(WaterWalkingBoots).NegateTip("Tooltip1"));
