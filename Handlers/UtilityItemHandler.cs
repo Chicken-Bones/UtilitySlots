@@ -7,9 +7,11 @@ namespace UtilitySlots.Handlers
 {
     public abstract class UtilityItemHandler
 	{
-		public IList<string> negatedTipLines = new List<string>();
-
 		public virtual bool FullyFunctional => false;
+
+		public virtual string PartiallyFunctionalHintKey { get; protected set; }
+
+		public virtual IList<string> NegatedTipLines { get; protected set; } = new List<string>();
 
 		public abstract void ApplyEffect(Player p, bool hideVisual);
 
@@ -22,14 +24,19 @@ namespace UtilitySlots.Handlers
 					line.overrideColor = Color.Gray;
 					line.text = "Modifiers have no effect";
 				}
-				if (negatedTipLines.Contains(line.Name))
+				if (NegatedTipLines.Contains(line.Name))
 					line.overrideColor = Color.Gray;
 			}
 		}
 
 		public UtilityItemHandler NegateTip(params string[] lines)
 		{
-			negatedTipLines = lines;
+			NegatedTipLines = lines;
+			return this;
+		}
+
+		public UtilityItemHandler WithHint(string key) {
+			PartiallyFunctionalHintKey = key;
 			return this;
 		}
 	}

@@ -1,6 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
 using System.Collections.Generic;
+using System.Linq;
 using Terraria;
+using Terraria.Localization;
 using Terraria.ModLoader;
 
 namespace UtilitySlots
@@ -32,7 +34,7 @@ namespace UtilitySlots
             slotType == AccessorySlotType.DyeSlot || slotType == AccessorySlotType.FunctionalSlot && UtilityAccessories.GetHandler(checkItem) != null;
 
         public override bool ModifyDefaultSwapSlot(Item item, int accSlotToSwapTo) =>
-            IsEmpty && (UtilityAccessories.GetHandler(item)?.FullyFunctional ?? false);
+			FunctionalItem.IsAir && (UtilityAccessories.GetHandler(item)?.FullyFunctional ?? false);
 
         public override void ApplyEquipEffects() {
             UtilityAccessories.GetHandler(FunctionalItem)?.ApplyEffect(Player, HideVisuals);
@@ -42,13 +44,20 @@ namespace UtilitySlots
         public override void OnMouseHover(AccessorySlotType context) {
             if (context == AccessorySlotType.FunctionalSlot) {
                 if (FunctionalItem.IsAir)
-                    Main.hoverItemName = "Utility Accessory";
+                    Main.hoverItemName = Language.GetTextValue("Mods.UtilitySlots.SlotText");
                 else
                     GlobalItemHook.UtilityHoverItem = Main.HoverItem;
             }
         }
 
-        private class GlobalItemHook : GlobalItem
+		public override void PostDraw(AccessorySlotType context, Item item, Vector2 position, bool isHovered) {
+			// if this is the last enabled slot
+			if (context == AccessorySlotType.FunctionalSlot && ContentInstance<UtilitySlot>.Instances.Last(slot => slot.IsEnabled()) == this) {
+				UtilitySlotsEquipPage.DrawPartiallyFunctionalAccDetails(position);
+			}
+		}
+
+		private class GlobalItemHook : GlobalItem
         {
             public static Item UtilityHoverItem;
 

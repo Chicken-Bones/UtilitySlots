@@ -32,8 +32,7 @@ namespace UtilitySlots
 
 				EmpressFlightBooster, GravityGlobe, 
 
-				ClimbingClaws, ShoeSpikes, TigerClimbingGear,
-				Tabi, BlackBelt, MasterNinjaGear,
+				ClimbingClaws, ShoeSpikes, TigerClimbingGear, Tabi,
 				Flipper, FrogFlipper, FrogWebbing, FrogGear,
 				FloatingTube, JellyfishNecklace, DivingGear, DivingHelmet, JellyfishDivingGear, ArcticDivingGear, NeptunesShell,
 
@@ -61,22 +60,25 @@ namespace UtilitySlots
 				MusicBoxConsoleTitle, MusicBoxUndergroundDesert, MusicBoxOWRain, MusicBoxOWDay, MusicBoxOWNight, MusicBoxOWUnderground, MusicBoxOWDesert, MusicBoxOWOcean, MusicBoxOWMushroom,
 				MusicBoxOWDungeon, MusicBoxOWSpace, MusicBoxOWUnderworld, MusicBoxOWSnow, MusicBoxOWCorruption, MusicBoxOWUndergroundCorruption, MusicBoxOWCrimson, MusicBoxOWUndergroundCrimson,
 				MusicBoxOWUndergroundSnow, MusicBoxOWUndergroundHallow, MusicBoxOWBloodMoon, MusicBoxOWBoss2, MusicBoxOWBoss1, MusicBoxOWInvasion, MusicBoxOWTowers, MusicBoxOWMoonLord, MusicBoxOWPlantera,
-				MusicBoxOWJungle, MusicBoxOWWallOfFlesh, MusicBoxOWHallow, MusicBoxCredits, MusicBoxDeerclops); 
+				MusicBoxOWJungle, MusicBoxOWWallOfFlesh, MusicBoxOWHallow, MusicBoxCredits, MusicBoxDeerclops);
 
-			AddHandler(MasterNinjaGear, new EquivalentItemsHandler(TigerClimbingGear, Tabi).NegateTip("Tooltip1"));
-			AddHandler(HoneyBalloon, new EquivalentItemsHandler(ShinyRedBalloon).NegateTip("Tooltip1"));
-			AddHandler(BalloonHorseshoeHoney, new EquivalentItemsHandler(ShinyRedBalloon, LuckyHorseshoe).NegateTip("Tooltip0"));
-			AddHandler(CoinRing, new EquivalentItemsHandler(GoldRing).NegateTip("Tooltip1"));
-			AddHandler(GreedyRing, new EquivalentItemsHandler(DiscountCard, GoldRing).NegateTip("Tooltip1"));
+			string fh(string key) => "Mods.UtilitySlots.FunctionalHints." + key;
+
+			AddHandler(MasterNinjaGear, new EquivalentItemsHandler(TigerClimbingGear, Tabi).NegateTip("Tooltip1").WithHint(fh("BlackBelt")));
+			AddHandler(HoneyBalloon, new EquivalentItemsHandler(ShinyRedBalloon).NegateTip("Tooltip1").WithHint(fh("Honey")));
+			AddHandler(BalloonHorseshoeHoney, new EquivalentItemsHandler(ShinyRedBalloon, LuckyHorseshoe).NegateTip("Tooltip0").WithHint(fh("Honey")));
+			AddHandler(CoinRing, new EquivalentItemsHandler(GoldRing).NegateTip("Tooltip1").WithHint(fh("Money")));
+			AddHandler(GreedyRing, new EquivalentItemsHandler(DiscountCard, GoldRing).NegateTip("Tooltip1").WithHint(fh("Money")));
 
 			// Because of TerraSpark Boots, we've decided to allow lava and fire immunity post hardmode.
 			// Lava waders combine the effects of Obsidian Skull, Lava Charm, Water Walking Boots, and Obsidian Rose
 			// Lava Charm, Obsidian Skull and Obsidian Horseshoe will also activate post-hardmode.
 			// Other obsidian and magma related accessories will not be permitted in utility slots, because their primary uses are combat related
-			AddHardmodeLavaAccHandler(ObsidianHorseshoe, new EquivalentItemsHandler(LuckyHorseshoe).NegateTip("Tooltip1"));
-			AddHardmodeLavaAccHandler(ObsidianWaterWalkingBoots, new EquivalentItemsHandler(WaterWalkingBoots).NegateTip("Tooltip1"));
-			AddHardmodeLavaAccHandler(LavaWaders, new PreHardmodeLavaWaderHandler().NegateTip("Tooltip1", "Tooltip2"));
-			AddHardmodeLavaAccHandler(TerrasparkBoots, new EquivalentItemsHandler(FrostsparkBoots, LavaWaders).NegateTip("Tooltip3", "Tooltip4"));
+			AddHardmodeLavaAccHandler(ObsidianHorseshoe, new EquivalentItemsHandler(LuckyHorseshoe).NegateTip("Tooltip1").WithHint(fh("Obsidian")));
+			AddHardmodeLavaAccHandler(ObsidianWaterWalkingBoots, new EquivalentItemsHandler(WaterWalkingBoots).NegateTip("Tooltip1").WithHint(fh("Obsidian")));
+
+			AddHardmodeLavaAccHandler(LavaWaders, new PreHardmodeLavaWaderHandler().NegateTip("Tooltip1", "Tooltip2").WithHint(fh("Lava")));
+			AddHardmodeLavaAccHandler(TerrasparkBoots, new EquivalentItemsHandler(FrostsparkBoots, LavaWaders).NegateTip("Tooltip3", "Tooltip4").WithHint(fh("Lava")));
 
 			void AddHardmodeLavaAccHandler(int itemId, UtilityItemHandler preHardmodeHandler) =>
 				AddHandler(itemId, new HardmodeDependentHandler(preHardmodeHandler, new FullyFunctionalHandler(itemId)));
@@ -97,6 +99,8 @@ namespace UtilitySlots
 			}
 
 			public override bool FullyFunctional => ActiveHandler.FullyFunctional;
+
+			public override string PartiallyFunctionalHintKey => ActiveHandler.PartiallyFunctionalHintKey;
 
 			public override void ApplyEffect(Player p, bool hideVisual) => ActiveHandler.ApplyEffect(p, hideVisual);
 

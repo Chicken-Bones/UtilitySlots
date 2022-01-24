@@ -7,6 +7,8 @@ using Terraria;
 using static Mono.Cecil.Cil.OpCodes;
 using Terraria.ModLoader;
 using System.Linq;
+using Terraria.GameContent;
+using Terraria.Localization;
 
 namespace UtilitySlots
 {
@@ -50,23 +52,62 @@ namespace UtilitySlots
 
         public void Unload() {}
 
-        /// <summary>
-        /// </summary>
-        /// <param name="pos">Page icon drawing position</param>
-        /// <returns>true if the page icon is under the mouse</returns>
-        private bool DrawPageIcons(Vector2 pos) {
+		internal static void DrawPartiallyFunctionalAccDetails(Vector2 position) {
+			float itemScale = Main.inventoryScale * 0.7f;
+			float itemSpacing = 40 * itemScale;
+
+			position += new Vector2(18, 68) * Main.inventoryScale;
+
+			foreach (var item in ContentInstance<UtilitySlot>.Instances.Select(slot => slot.FunctionalItem)) {
+				var h = UtilityAccessories.GetHandler(item);
+				if (h == null) continue;
+
+				var hint = h.PartiallyFunctionalHintKey;
+				if (hint == null) continue;
+
+				if (DrawItem(item, position, itemScale, Color.White)) {
+					Main.HoverItem = new Item();
+					Main.hoverItemName = Language.GetTextValue(hint);
+				}
+				position.X -= itemSpacing;
+			}
+		}
+
+		private static bool DrawItem(Item item, Vector2 position, float scale, Color color) {
+			Main.instance.LoadItem(item.type);
+			Texture2D tex = TextureAssets.Item[item.type].Value;
+			Rectangle region = (Main.itemAnimations[item.type] == null) ? tex.Frame() : Main.itemAnimations[item.type].GetFrame(tex);
+
+			var nominalSize = 32f;
+			if (region.Width > nominalSize || region.Height > nominalSize)
+				scale *= MathF.Min(nominalSize / region.Height, nominalSize / region.Width);
+
+			position += new Vector2(nominalSize, nominalSize) * scale / 2f;
+			var origin = region.Size() / 2f;
+
+			Main.spriteBatch.Draw(tex, position, region, item.GetAlpha(color), 0f, origin, scale, SpriteEffects.None, 0f);
+			Main.spriteBatch.Draw(tex, position, region, item.GetColor(color), 0f, origin, scale, SpriteEffects.None, 0f);
+
+			return Collision.CheckAABBvAABBCollision(position - region.Size() * scale / 2f, region.Size() * scale, Main.MouseScreen, Vector2.One);
+		}
+
+		/// <summary>
+		/// </summary>
+		/// <param name="pos">Page icon drawing position</param>
+		/// <returns>true if the page icon is under the mouse</returns>
+		private bool DrawPageIcons(Vector2 pos) {
             pos.X += 92f;
             pos.Y += 2f;
             float scale = 0.8f;
 
             var tex = buttonTextures[Main.EquipPage == EquipPage ? 1 : 0].Value;
             bool highlight = false;
-            if (Collision.CheckAABBvAABBCollision(pos, tex.Size(), new Vector2(Main.mouseX, Main.mouseY), Vector2.One) &&
+            if (Collision.CheckAABBvAABBCollision(pos, tex.Size(), Main.MouseScreen, Vector2.One) &&
                     (Main.mouseItem.stack < 1 || UtilityAccessories.GetHandler(Main.mouseItem) != null || Main.mouseItem.dye > 0)) {
                 highlight = true;
                 Main.spriteBatch.Draw(buttonTextures[2].Value, pos, null, Main.OurFavoriteColor, 0f, new Vector2(2f), scale, SpriteEffects.None, 0f);
 				Main.HoverItem = new Item();
-				Main.hoverItemName = "Utility Accessories";
+				Main.hoverItemName = Language.GetTextValue("Mods.UtilitySlots.PageName");
 			}
             Main.spriteBatch.Draw(tex, pos, null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
             return highlight;

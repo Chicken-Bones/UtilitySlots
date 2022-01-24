@@ -1,0 +1,14 @@
+Mods: {
+	UtilitySlots: {
+		PageName: Utility Accessories
+		SlotText: Utility Accessory
+
+		FunctionalHints: {
+			Obsidian: Fire protection granted in hardmode
+			Lava: Lava protection granted in hardmode
+			Money: Risk = Reward			
+			BlackBelt: Black belt effect disabled
+			Honey: The bees won't help you here
+		}
+	}
+}
