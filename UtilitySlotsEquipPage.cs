@@ -65,7 +65,9 @@ namespace UtilitySlots
                     (Main.mouseItem.stack < 1 || UtilityAccessories.GetHandler(Main.mouseItem) != null || Main.mouseItem.dye > 0)) {
                 highlight = true;
                 Main.spriteBatch.Draw(buttonTextures[2].Value, pos, null, Main.OurFavoriteColor, 0f, new Vector2(2f), scale, SpriteEffects.None, 0f);
-            }
+				Main.HoverItem = new Item();
+				Main.hoverItemName = "Utility Accessories";
+			}
             Main.spriteBatch.Draw(tex, pos, null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
             return highlight;
         }
@@ -87,7 +89,7 @@ namespace UtilitySlots
             c.GotoNext(MoveType.After, i => i.MatchCall(newVec2));
 
             c.Emit(Ldloc, 1);//vector
-            c.EmitDelegate<Func<Vector2, bool>>(DrawPageIcons);
+            c.EmitDelegate(DrawPageIcons);
             var endIfLabel = c.DefineLabel();
             c.Emit(Brfalse, endIfLabel);
             c.Emit(Ldc_I4, EquipPage);
@@ -105,7 +107,7 @@ namespace UtilitySlots
             //UtilityInventory.ItemEquipPage();
             //before return num;
             c.GotoNext(i => i.MatchRet());
-            c.EmitDelegate<Action>(ItemEquipPage);
+            c.EmitDelegate(ItemEquipPage);
         }
     }
 }
