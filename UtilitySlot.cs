@@ -22,7 +22,9 @@ namespace UtilitySlots
 
         public override string FunctionalTexture => "UtilitySlots/assets/slot_bg_utility";
 
-        public override Vector2? CustomLocation => new Vector2(Main.screenWidth - 64 - 28, AccessorySlotLoader.DrawVerticalAlignment + (int)(index * 56 * Main.inventoryScale));
+		private int DrawIndex => ContentInstance<UtilitySlot>.Instances.Count(slot => slot.index < index && (slot.IsEnabled() || slot.IsVisibleWhenNotEnabled()));
+
+        public override Vector2? CustomLocation => new Vector2(Main.screenWidth - 64 - 28, AccessorySlotLoader.DrawVerticalAlignment + (int)(DrawIndex * 56 * Main.inventoryScale));
 
         public override bool DrawVanitySlot => false;
 
