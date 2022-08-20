@@ -19,13 +19,13 @@ namespace UtilitySlots.Handlers
 		{
 			foreach (var line in tooltip)
 			{
-				if (line.isModifier)
+				if (line.IsModifier)
 				{
-					line.overrideColor = Color.Gray;
-					line.text = "Modifiers have no effect";
+					line.OverrideColor = Color.Gray;
+					line.Text = "Modifiers have no effect";
 				}
 				if (NegatedTipLines.Contains(line.Name))
-					line.overrideColor = Color.Gray;
+					line.OverrideColor = Color.Gray;
 			}
 		}
 
