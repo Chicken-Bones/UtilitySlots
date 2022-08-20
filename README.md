@@ -8,4 +8,4 @@ Adds additional accessory slots for non-combat and mobility accessories. Choosin
 * Tooltips indicate disabled combat effects
 * API via `UtilityAccessories` for registering utility accessories
 
-While the mod is carefully balanced, being able to equip frog legs, wings, frostpark boots and shiny red balloons is definitely a buff.
+While the mod is carefully balanced, being able to equip frog legs, wings, frostspark boots and shiny red balloons is definitely a buff.
