@@ -1,5 +1,5 @@
 displayName = Utility Slots
 version = 1.0
-author = Chicken Bones, Xel Ladia
+author = Chicken Bones, Xelladia
 description = Extra slots for non-combat equipment
 
